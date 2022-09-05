@@ -1,4 +1,4 @@
-import {useSnackbar} from 'notistack';
+import { useSnackbar } from 'notistack';
 import React from 'react';
 
 import {
@@ -10,10 +10,10 @@ import {
     RoomInfo,
     UIConfig,
 } from './message';
-import {loadSettings, resolveCodecPlaceholder} from './settings';
-import {urlWithSlash} from './url';
-import {authModeToRoomMode} from './useConfig';
-import {getFromURL, useRoomID} from './useRoomID';
+import { loadSettings, resolveCodecPlaceholder } from './settings';
+import { urlWithSlash } from './url';
+import { authModeToRoomMode } from './useConfig';
+import { getFromURL, useRoomID } from './useRoomID';
 
 export type RoomState = false | ConnectedRoom;
 export type ConnectedRoom = {
@@ -37,7 +37,7 @@ export interface UseRoom {
 }
 
 const relayConfig: Partial<RTCConfiguration> =
-    window.location.search.indexOf('forceTurn=true') !== -1 ? {iceTransportPolicy: 'relay'} : {};
+    window.location.search.indexOf('forceTurn=true') !== -1 ? { iceTransportPolicy: 'relay' } : {};
 
 const hostSession = async ({
     sid,
@@ -52,12 +52,12 @@ const hostSession = async ({
     done: () => void;
     stream: MediaStream;
 }): Promise<RTCPeerConnection> => {
-    const peer = new RTCPeerConnection({...relayConfig, iceServers: ice});
+    const peer = new RTCPeerConnection({ ...relayConfig, iceServers: ice });
     peer.onicecandidate = (event) => {
         if (!event.candidate) {
             return;
         }
-        send({type: 'hostice', payload: {sid: sid, value: event.candidate}});
+        send({ type: 'hostice', payload: { sid: sid, value: event.candidate } });
     };
 
     peer.onconnectionstatechange = (event) => {
@@ -104,9 +104,9 @@ const hostSession = async ({
         }
     }
 
-    const hostOffer = await peer.createOffer({offerToReceiveVideo: true});
+    const hostOffer = await peer.createOffer({ offerToReceiveVideo: true });
     await peer.setLocalDescription(hostOffer);
-    send({type: 'hostoffer', payload: {value: hostOffer, sid: sid}});
+    send({ type: 'hostoffer', payload: { value: hostOffer, sid: sid } });
 
     return peer;
 };
@@ -125,12 +125,12 @@ const clientSession = async ({
     done: () => void;
 }): Promise<RTCPeerConnection> => {
     console.log('ice', ice);
-    const peer = new RTCPeerConnection({...relayConfig, iceServers: ice});
+    const peer = new RTCPeerConnection({ ...relayConfig, iceServers: ice });
     peer.onicecandidate = (event) => {
         if (!event.candidate) {
             return;
         }
-        send({type: 'clientice', payload: {sid: sid, value: event.candidate}});
+        send({ type: 'clientice', payload: { sid: sid, value: event.candidate } });
     };
     peer.onconnectionstatechange = (event) => {
         console.log('client change', event);
@@ -156,7 +156,7 @@ export type FCreateRoom = (room: RoomCreate | JoinRoom) => Promise<void>;
 
 export const useRoom = (config: UIConfig): UseRoom => {
     const [roomID, setRoomID] = useRoomID();
-    const {enqueueSnackbar} = useSnackbar();
+    const { enqueueSnackbar } = useSnackbar();
     const conn = React.useRef<WebSocket>();
     const host = React.useRef<Record<string, RTCPeerConnection>>({});
     const client = React.useRef<Record<string, RTCPeerConnection>>({});
@@ -180,11 +180,11 @@ export const useRoom = (config: UIConfig): UseRoom => {
                         first = false;
                         if (event.type === 'room') {
                             resolve();
-                            setState({ws, ...event.payload, clientStreams: []});
+                            setState({ ws, ...event.payload, clientStreams: [] });
                             setRoomID(event.payload.id);
                         } else {
                             resolve();
-                            enqueueSnackbar('Unknown Event: ' + event.type, {variant: 'error'});
+                            enqueueSnackbar('Unknown Event: ' + event.type, { variant: 'error' });
                             ws.close(1000, 'received unknown event');
                         }
                         return;
@@ -193,7 +193,7 @@ export const useRoom = (config: UIConfig): UseRoom => {
                     switch (event.type) {
                         case 'room':
                             setState((current) =>
-                                current ? {...current, ...event.payload} : current
+                                current ? { ...current, ...event.payload } : current
                             );
                             return;
                         case 'hostsession':
@@ -211,7 +211,7 @@ export const useRoom = (config: UIConfig): UseRoom => {
                             });
                             return;
                         case 'clientsession':
-                            const {id: sid, peer} = event.payload;
+                            const { id: sid, peer } = event.payload;
                             clientSession({
                                 sid,
                                 send,
@@ -221,11 +221,11 @@ export const useRoom = (config: UIConfig): UseRoom => {
                                     setState((current) =>
                                         current
                                             ? {
-                                                  ...current,
-                                                  clientStreams: current.clientStreams.filter(
-                                                      ({id}) => id !== sid
-                                                  ),
-                                              }
+                                                ...current,
+                                                clientStreams: current.clientStreams.filter(
+                                                    ({ id }) => id !== sid
+                                                ),
+                                            }
                                             : current
                                     );
                                 },
@@ -233,16 +233,16 @@ export const useRoom = (config: UIConfig): UseRoom => {
                                     setState((current) =>
                                         current
                                             ? {
-                                                  ...current,
-                                                  clientStreams: [
-                                                      ...current.clientStreams,
-                                                      {
-                                                          id: sid,
-                                                          stream,
-                                                          peer_id: peer,
-                                                      },
-                                                  ],
-                                              }
+                                                ...current,
+                                                clientStreams: [
+                                                    ...current.clientStreams,
+                                                    {
+                                                        id: sid,
+                                                        stream,
+                                                        peer_id: peer,
+                                                    },
+                                                ],
+                                            }
                                             : current
                                     ),
                             }).then((peer) => (client.current[event.payload.id] = peer));
@@ -268,7 +268,7 @@ export const useRoom = (config: UIConfig): UseRoom => {
                                 );
                                 send({
                                     type: 'clientanswer',
-                                    payload: {sid: event.payload.sid, value: answer},
+                                    payload: { sid: event.payload.sid, value: answer },
                                 });
                             })();
                             return;
@@ -281,11 +281,11 @@ export const useRoom = (config: UIConfig): UseRoom => {
                             setState((current) =>
                                 current
                                     ? {
-                                          ...current,
-                                          clientStreams: current.clientStreams.filter(
-                                              ({id}) => id !== event.payload
-                                          ),
-                                      }
+                                        ...current,
+                                        clientStreams: current.clientStreams.filter(
+                                            ({ id }) => id !== event.payload
+                                        ),
+                                    }
                                     : current
                             );
                     }
@@ -295,7 +295,7 @@ export const useRoom = (config: UIConfig): UseRoom => {
                         resolve();
                         first = false;
                     }
-                    enqueueSnackbar(event.reason, {variant: 'error', persist: true});
+                    enqueueSnackbar(event.reason, { variant: 'error', persist: true });
                     setState(false);
                 };
                 ws.onerror = (err) => {
@@ -303,7 +303,7 @@ export const useRoom = (config: UIConfig): UseRoom => {
                         resolve();
                         first = false;
                     }
-                    enqueueSnackbar(err?.toString(), {variant: 'error', persist: true});
+                    enqueueSnackbar(err?.toString(), { variant: 'error', persist: true });
                     setState(false);
                 };
                 ws.onopen = () => {
@@ -326,18 +326,18 @@ export const useRoom = (config: UIConfig): UseRoom => {
             );
             return;
         }
+        const constraintsObject: DisplayMediaStreamConstraints = {
+            video: {
+                cursor: 'always',
+            },
+            audio: true,
+        } as DisplayMediaStreamConstraints;
         stream.current = await navigator.mediaDevices
-            // @ts-ignore
-            .getDisplayMedia({
-                video: {
-                    cursor: 'always',
-                },
-                audio: true,
-            });
+            .getDisplayMedia(constraintsObject);
         stream.current?.getVideoTracks()[0].addEventListener('ended', () => stopShare());
-        setState((current) => (current ? {...current, hostStream: stream.current} : current));
+        setState((current) => (current ? { ...current, hostStream: stream.current } : current));
 
-        conn.current?.send(JSON.stringify({type: 'share', payload: {}}));
+        conn.current?.send(JSON.stringify({ type: 'share', payload: {} }));
     };
 
     const stopShare = async () => {
@@ -347,12 +347,12 @@ export const useRoom = (config: UIConfig): UseRoom => {
         host.current = {};
         stream.current?.getTracks().forEach((track) => track.stop());
         stream.current = undefined;
-        conn.current?.send(JSON.stringify({type: 'stopshare', payload: {}}));
-        setState((current) => (current ? {...current, hostStream: undefined} : current));
+        conn.current?.send(JSON.stringify({ type: 'stopshare', payload: {} }));
+        setState((current) => (current ? { ...current, hostStream: undefined } : current));
     };
 
     const setName = (name: string): void => {
-        conn.current?.send(JSON.stringify({type: 'name', payload: {username: name}}));
+        conn.current?.send(JSON.stringify({ type: 'name', payload: { username: name } }));
     };
 
     React.useEffect(() => {
@@ -374,11 +374,11 @@ export const useRoom = (config: UIConfig): UseRoom => {
                     },
                 });
             } else {
-                room({type: 'join', payload: {id: roomID}});
+                room({ type: 'join', payload: { id: roomID } });
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return {state, room, share, stopShare, setName};
+    return { state, room, share, stopShare, setName };
 };
