@@ -332,8 +332,27 @@ export const useRoom = (config: UIConfig): UseRoom => {
             },
             audio: true,
         } as DisplayMediaStreamConstraints;
-        stream.current = await navigator.mediaDevices
-            .getDisplayMedia(constraintsObject);
+        const videostream = await navigator.mediaDevices.getDisplayMedia(constraintsObject);
+
+        let composedStream = new MediaStream();
+        videostream.getVideoTracks().forEach((videoTrack) => {
+            composedStream.addTrack(videoTrack);
+        });
+        
+        if (videostream.getAudioTracks().length > 0) { 
+            let context = new AudioContext();
+            let audioDestination = context.createMediaStreamDestination();
+            const systemSource = context.createMediaStreamSource(videostream);
+            const systemGain = context.createGain();
+            systemGain.gain.value = 1.0;
+            systemSource.connect(systemGain).connect(audioDestination);
+            console.log("added system audio");
+
+            audioDestination.stream.getAudioTracks().forEach((audioTrack) => {
+                composedStream.addTrack(audioTrack);
+            });
+        }
+        stream.current = composedStream
         stream.current?.getVideoTracks()[0].addEventListener('ended', () => stopShare());
         setState((current) => (current ? { ...current, hostStream: stream.current } : current));
 
